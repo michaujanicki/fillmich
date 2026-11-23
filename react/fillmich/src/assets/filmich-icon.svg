@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+  <title>Fillmich</title>
+  <g transform="translate(30 30) scale(.533333)">
+    <g fill="none" stroke-linecap="round" stroke-width="6">
+      <path stroke="#5F4B3A" d="M18 0H7a7 7 0 0 0-7 7v11M90 72v11a7 7 0 0 1-7 7H72"></path>
+      <path stroke="#9E7C61" d="M72 0h11a7 7 0 0 1 7 7v11M0 72v11a7 7 0 0 0 7 7h11"></path>
+    </g>
+    <g transform="translate(45 45) rotate(-45)">
+      <path fill="#C5B1A0" d="M-28-14H0V14h-28a14 14 0 0 1 0-28z"></path>
+      <path fill="#9E7C61" d="M0-14h28a14 14 0 0 1 0 28H0z"></path>
+      <rect x="-23" y="-8" width="43" height="3" rx="1.5" fill="#F7EFE7" opacity=".65"></rect>
+    </g>
+    <path fill="none" stroke="#7E644E" stroke-width="4.5" stroke-linecap="round" d="M68 17v12M62 23h12"></path>
+  </g>
+</svg>

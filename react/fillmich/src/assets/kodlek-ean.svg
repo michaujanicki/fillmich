@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="415" viewBox="0 0 760 830" role="img" aria-label="Cztery opakowania leków z kodami kreskowymi w stylu EAN-13">
+  <defs>
+    <linearGradient id="front" x2="1" y2="1">
+      <stop stop-color="#FAF2EA"></stop>
+      <stop offset="1" stop-color="#DECABA"></stop>
+    </linearGradient>
+
+    <g id="ean" aria-hidden="true">
+      <rect width="206" height="88" rx="2" fill="#FFF8EF"></rect>
+      <g transform="translate(12 9) scale(1.9 1)" fill="none" stroke="#3F3227" stroke-linecap="butt">
+        <path stroke-width="1" d="M.5 0v53m2-53v53m44-53v53m2-53v53m44-53v53m2-53v53
+                 M5.5 0v46m6-46v46m10-46v46m5-46v46m10-46v46m7-46v46
+                 M53.5 0v46m10-46v46m10-46v46m9-46v46m7-46v46"></path>
+        <path stroke-width="2" d="M9 0v46m9-46v46m12-46v46m10-46v46
+                 M57 0v46m10-46v46m10-46v46m9-46v46"></path>
+        <path stroke-width="3" d="M14.5 0v46m10-46v46m9-46v46
+                 M51.5 0v46m9-46v46m10-46v46m9-46v46"></path>
+      </g>
+      <text x="103" y="76" text-anchor="middle" fill="#3F3227" font-family="Arial, sans-serif" font-size="15" letter-spacing="3">5 901234 123457</text>
+    </g>
+
+    <g id="pack">
+      <path fill="#D2BAA6" d="M0 0l18-16h501L498 0z"></path>
+      <path fill="#9E7C61" d="M498 0l21-16v147l-21 12z"></path>
+      <rect width="498" height="143" rx="3" fill="url(#front)"></rect>
+      <path d="M3 138h492" stroke="#B19781" stroke-width="5"></path>
+      <path d="M471 4v130" stroke="#C5B1A0"></path>
+
+      <g fill="#5F4B3A" font-family="Arial, sans-serif">
+        <text x="30" y="43" font-size="22" font-weight="700">Tabletki</text>
+        <text x="30" y="72" font-size="17">30 tabletek</text>
+        <text x="30" y="103" font-size="15">Nr serii: E203413</text>
+      </g>
+      <use href="#ean" x="240" y="22"></use>
+    </g>
+  </defs>
+
+  <rect width="760" height="830" fill="#F7EFE7"></rect>
+  <g transform="translate(280 31) rotate(25)">
+    <use href="#pack" y="468"></use>
+    <use href="#pack" y="312"></use>
+    <use href="#pack" y="156"></use>
+    <use href="#pack"></use>
+  </g>
+</svg>

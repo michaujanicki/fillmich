@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="380" height="415" viewBox="0 0 760 830" role="img" aria-label="Cztery opakowania leków w kolorach Fillmich">
+  <defs>
+    <linearGradient id="front" x2="1" y2="1">
+      <stop stop-color="#FAF2EA"></stop>
+      <stop offset="1" stop-color="#DECABA"></stop>
+    </linearGradient>
+
+    <pattern id="dots" width="8" height="7" patternUnits="userSpaceOnUse">
+      <path fill="#5F4B3A" d="M0 0h2v3H0zM4 1h3v2H4zM2 4h3v3H2zM7 5h1v2H7z"></path>
+    </pattern>
+
+    <g id="pack">
+      <path fill="#D2BAA6" d="M0 0l18-16h501L498 0z"></path>
+      <path fill="#9E7C61" d="M498 0l21-16v147l-21 12z"></path>
+      <rect width="498" height="143" rx="3" fill="url(#front)"></rect>
+      <path d="M3 138h492" stroke="#B19781" stroke-width="5"></path>
+      <path d="M471 4v130" stroke="#C5B1A0"></path>
+
+      <text x="30" y="31">PC: 05909990859016</text>
+      <text x="30" y="57">Nr serii (LOT): E203413</text>
+      <text x="30" y="83">Termin ważności (EXP): 05/2022</text>
+
+      <g transform="translate(374 31)" aria-hidden="true">
+        <rect width="68" height="68" fill="#F8EEE4"></rect>
+        <rect x="7" y="7" width="54" height="54" fill="url(#dots)"></rect>
+        <path d="M7 7v54h54" fill="none" stroke="#5F4B3A" stroke-width="3"></path>
+      </g>
+    </g>
+  </defs>
+
+  <rect width="760" height="830" fill="#F7EFE7"></rect>
+
+  <g transform="translate(280 31) rotate(25)" fill="#5F4B3A" font-family="Arial, sans-serif" font-size="17">
+    <use href="#pack" y="468"></use>
+    <text x="30" y="577">SN: 38744340001</text>
+    <use href="#pack" y="312"></use>
+    <text x="30" y="421">SN: 38727659116</text>
+    <use href="#pack" y="156"></use>
+    <text x="30" y="265">SN: 38734022249</text>
+    <use href="#pack"></use>
+    <text x="30" y="109">SN: 38754864332</text>
+  </g>
+</svg>
