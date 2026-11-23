@@ -174,7 +174,7 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
       <button className="close" onClick={onClose} aria-label="Zamknij dodawanie leku">×</button>
       <div className="eyebrow">NOWY LEK W APTECZCE</div><h2 id="wizard-title">Dodaj lek</h2>
       <div className="wizard-progress" aria-label={`Krok ${step + 1} z 4`}>
-        {['Sposób', 'Lek', 'Szczegóły', 'Gotowe'].map((label, index) => <div key={label} className={index === step ? 'current' : index < step ? 'done' : ''}><span>{index < step ? '✓' : index + 1}</span><small>{label}</small></div>)}
+        {['Sposób', 'Lek', 'Dane', 'Gotowe'].map((label, index) => <div key={label} className={index === step ? 'current' : index < step ? 'done' : ''}><span>{index < step ? '✓' : index + 1}</span><small>{label}</small></div>)}
       </div>
       {step === 0 ? <div className="wizard-body"><h3>Jak chcesz dodać lek?</h3><p>Wybierz najwygodniejszy sposób. W kolejnych krokach uzupełnisz szczegóły.</p><div className="method-list">{methods.map(item => <button type="button" key={item.id} className="method-card" onClick={() => chooseMethod(item.id)}><span className="method-icon">{item.id === 'scan' ? <span className="scan-mark" aria-hidden="true" /> : item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span className="method-arrow">→</span></button>)}</div></div> : <form onSubmit={next}>
         {step === 1 && <div className="wizard-body"><h3>{method === 'registry' ? 'Znajdź swój lek' : method === 'scan' ? 'Odczytaj kod opakowania' : 'Wpisz nazwę leku'}</h3>
