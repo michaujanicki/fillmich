@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 110" width="380" height="110">
+  <defs>
+    <!-- Gradient oparty na środkowych odcieniach Dusty Grey (400 -> 600) -->
+    <linearGradient id="dustyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#B19781" />
+      <stop offset="100%" stop-color="#7E644E" />
+    </linearGradient>
+  </defs>
+
+  <!-- Sygnet (Ikona) -->
+  <g transform="translate(15, 10)">
+    <!-- Celownik / Ramka skanera kodów kreskowych (700 i 400) -->
+    <path d="M 18 0 H 6 A 6 6 0 0 0 0 6 V 18" fill="none" stroke="#5F4B3A" stroke-width="4" stroke-linecap="round" />
+    <path d="M 72 0 H 84 A 6 6 0 0 1 90 6 V 18" fill="none" stroke="#B19781" stroke-width="4" stroke-linecap="round" />
+    <path d="M 0 72 V 84 A 6 6 0 0 0 6 90 H 18" fill="none" stroke="#B19781" stroke-width="4" stroke-linecap="round" />
+    <path d="M 90 72 V 84 A 6 6 0 0 1 84 90 H 72" fill="none" stroke="#5F4B3A" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Obrócona kapsułka (tabletka) w środku (czysta) -->
+    <g transform="translate(45, 45) rotate(-45)">
+      <!-- Lewa połówka (300: #C5B1A0) -->
+      <path d="M -28 -14 H 0 V 14 H -28 A 14 14 0 0 1 -28 -14 Z" fill="#C5B1A0" />
+      <!-- Prawa połówka (500: #9E7C61) -->
+      <path d="M 0 -14 H 28 A 14 14 0 0 1 28 14 H 0 V -14 Z" fill="#9E7C61" />
+      
+      <!-- Delikatny refleks światła -->
+      <rect x="-20" y="-9" width="38" height="2" rx="1" fill="#D8CBC0" opacity="0.5" />
+    </g>
+
+    <!-- Mały krzyżyk medyczny w prawym górnym rogu (600: #7E644E) -->
+    <path d="M 66 16 V 26 M 61 21 H 71" stroke="#7E644E" stroke-width="3.5" stroke-linecap="round" />
+  </g>
+
+  <!-- Logotyp (Tekst główny z bezpiecznym marginesem po prawej) -->
+  <text x="125" y="72" font-family="system-ui, -apple-system, &#39;Segoe UI&#39;, Roboto, Helvetica, Arial, sans-serif" font-size="52" font-weight="800" fill="#C5B1A0" letter-spacing="-1.2">
+    Fill<tspan fill="url(#dustyGrad)">mich</tspan>
+  </text>
+</svg>
