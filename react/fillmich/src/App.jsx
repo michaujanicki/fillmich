@@ -30,7 +30,7 @@ function status(date) {
 }
 function App() {
   const [theme, setTheme] = useState(() => read('fillmich-theme', 'light') === 'dark' ? 'dark' : 'light')
-  const [textSize, setTextSize] = useState(() => { const saved = read('fillmich-text-size', 'large'); return ['standard', 'large', 'extra'].includes(saved) ? saved : 'large' })
+  const [textSize, setTextSize] = useState(() => { const saved = read('fillmich-text-size', 'medium'); return ['standard', 'medium', 'large', 'extra', 'extreme'].includes(saved) ? saved : 'medium' })
   const [medicines, setMedicines] = useState(() => read('fillmich-medicines', []))
   const [people, setPeople] = useState(() => read('fillmich-people', ['Wspólne']))
   const [profiles, setProfiles] = useState(() => read('fillmich-profiles', {}))

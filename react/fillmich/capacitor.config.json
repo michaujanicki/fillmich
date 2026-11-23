@@ -1,5 +1,11 @@
 ﻿{
   "appId": "pl.fillmich.app",
   "appName": "Fillmich",
-  "webDir": "dist"
+  "webDir": "dist",
+  "plugins": {
+    "SystemBars": {
+      "hidden": true,
+      "insetsHandling": "disable"
+    }
+  }
 }

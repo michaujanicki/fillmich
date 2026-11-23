@@ -23,19 +23,28 @@ public class MainActivity extends BridgeActivity {
         }
 
         WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-        controller.hide(WindowInsetsCompat.Type.systemBars());
+        hideSystemBars();
 
         View content = findViewById(android.R.id.content);
         ViewCompat.setOnApplyWindowInsetsListener(content, (view, windowInsets) -> {
-            Insets cutout = windowInsets.getInsets(WindowInsetsCompat.Type.displayCutout());
-            Insets gestures = windowInsets.getInsets(WindowInsetsCompat.Type.mandatorySystemGestures());
             Insets keyboard = windowInsets.getInsets(WindowInsetsCompat.Type.ime());
-            view.setPadding(cutout.left, cutout.top, cutout.right,
-                    Math.max(cutout.bottom, Math.max(gestures.bottom, keyboard.bottom)));
+            view.setPadding(0, 0, 0, keyboard.bottom);
             return windowInsets;
         });
         ViewCompat.requestApplyInsets(content);
+    }
+
+    private void hideSystemBars() {
+        WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        controller.hide(WindowInsetsCompat.Type.systemBars());
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            getWindow().getDecorView().post(this::hideSystemBars);
+        }
     }
 }

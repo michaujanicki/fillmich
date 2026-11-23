@@ -103,8 +103,10 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible,.p
 
 /* Text sizes can be changed without scaling the interface or cropping controls. */
 :root{--reading-text:16px;--reading-detail:14px;--reading-heading:28px;--reading-title:36px}
+:root[data-text-size=medium]{--reading-text:17px;--reading-detail:15px;--reading-heading:29px;--reading-title:37px}
 :root[data-text-size=large]{--reading-text:18px;--reading-detail:16px;--reading-heading:30px;--reading-title:38px}
 :root[data-text-size=extra]{--reading-text:20px;--reading-detail:18px;--reading-heading:32px;--reading-title:40px}
+:root[data-text-size=extreme]{--reading-text:24px;--reading-detail:21px;--reading-heading:36px;--reading-title:44px}
 body{font-size:var(--reading-text);line-height:1.5}
 :root :is(.heading p,.overview p,.plan-intro,.settings-intro,.dialog p,.empty p,.medicine p,.medicine-meta,.daily-dose,.dose-details strong,.dose-amount,.saved-plan strong,.settings-row strong,.method-card strong,.method-card small,.summary-list>div,.calendar-detail,.forecast-item strong,.forecast-item span,.plan-saved>p,.registry-results strong,.registry-results span){font-size:var(--reading-text);line-height:1.5}
 :root :is(.nav,.person-nav,.add-person-button,.drawer-utilities button,.primary,.secondary,.button-quiet,.help-button,.stock-button,.scan-button,.photo-picker,.filters button,.settings-action,.settings-row select,.dialog label,.dialog input,.dialog select,.plan-toolbar select,.search input){font-size:var(--reading-text);line-height:1.4}
@@ -205,4 +207,106 @@ html,.sidebar,.dialog,.registry-results,.filters{scrollbar-width:thin;scrollbar-
   .daily-dose{padding:16px;min-height:68px}.dose-totals>div{padding:16px}.forecast-item{padding:16px}
   .dialog{padding:24px 20px}.dialog h2{padding-right:36px}.wizard-actions .primary{flex:1}.wizard-actions .button-quiet{flex:0 0 auto}
   .footer-note{margin-top:30px}.footer-note a{display:block;margin-top:10px}
+}
+
+/* Keep editable controls at least 16px on touch devices to prevent focus zoom. */
+@media (pointer: coarse), (max-width: 650px) {
+  :root :is(input, select, textarea) { font-size: max(16px, var(--reading-text, 16px)); }
+}
+.scan-guide-image{position:relative;display:block;flex:none;width:min(42%,150px);padding:0;border:0;border-radius:8px;background:transparent;overflow:hidden;color:white}
+.scan-guide .scan-guide-image img{width:100%;height:auto}
+.scan-guide-image span{position:absolute;bottom:0;left:0;right:0;padding:5px;background:#1b3731dd;font-size:14px;font-weight:700;text-align:center}
+.scan-zoom-overlay{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:12px;background:#10251ee8}
+.scan-zoom-dialog{width:min(900px,100%);max-height:100%;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:14px;background:var(--surface);color:var(--text)}
+.scan-zoom-header,.scan-zoom-controls{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.scan-zoom-header button,.scan-zoom-controls button{min-height:48px;min-width:48px;padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface-soft);color:var(--text);font-size:16px;font-weight:700}
+.scan-zoom-controls{justify-content:center}.scan-zoom-controls button{font-size:25px}.scan-zoom-controls button:disabled{opacity:.45}.scan-zoom-controls span{min-width:55px;text-align:center;font-weight:700}
+.scan-zoom-viewport{overflow:auto;min-height:0;overscroll-behavior:contain;background:white;border-radius:8px}.scan-zoom-viewport img{display:block;max-width:none;height:auto}
+@media(max-width:400px){.scan-guide .scan-guide-image{width:min(100%,210px);margin:auto}}
+
+/* Paint behind display cutouts while keeping header controls clear of them. */
+@media(max-width:650px){
+  .topbar{height:calc(68px + env(safe-area-inset-top, 0px));padding-top:env(safe-area-inset-top, 0px);padding-left:max(20px, env(safe-area-inset-left, 0px));padding-right:max(20px, env(safe-area-inset-right, 0px))}
+  .content{padding-bottom:max(30px, env(safe-area-inset-bottom, 0px))}
+}
+
+/* Dialogs use the full available screen on phones. */
+@media(max-width:650px){
+  .overlay{padding:0;place-items:stretch}
+  .overlay > .dialog{width:100%;max-width:none;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none;padding-top:max(24px, env(safe-area-inset-top, 0px));padding-bottom:max(24px, env(safe-area-inset-bottom, 0px));padding-left:max(20px, env(safe-area-inset-left, 0px));padding-right:max(20px, env(safe-area-inset-right, 0px))}
+  .overlay > .dialog > .close{top:max(18px, env(safe-area-inset-top, 0px));right:max(20px, env(safe-area-inset-right, 0px));min-width:44px;min-height:44px}
+  .scan-zoom-overlay{padding:0}.scan-zoom-dialog{width:100%;height:100%;max-height:none;border-radius:0;padding-top:max(16px, env(safe-area-inset-top, 0px));padding-bottom:max(16px, env(safe-area-inset-bottom, 0px))}.scan-zoom-viewport{flex:1}
+}
+
+/* Settings: generous spacing and controls that are easy to read and tap. */
+.settings-view{max-width:800px}
+.settings-group h2{margin-bottom:8px}
+.settings-group-description{margin:0 0 16px;color:var(--muted);font-size:var(--reading-text);line-height:1.5}
+.settings-group h2 + .settings-row{margin-top:16px}
+.settings-row{gap:16px;padding:20px;margin-bottom:10px;border:1px solid var(--line);border-radius:var(--card-radius) !important}
+.settings-row + .settings-row{border-top:1px solid var(--line)}
+.settings-row>div{min-width:0}
+.settings-row label,.settings-row strong{display:block;color:var(--text);font-size:var(--reading-text);font-weight:700;line-height:1.4}
+.settings-row small{font-size:var(--reading-detail);line-height:1.5}
+.settings-row select{min-width:190px;max-width:100%;padding:12px;font-size:max(16px, var(--reading-text))}
+.settings-version{font-size:var(--reading-text);overflow-wrap:anywhere;white-space:normal}
+@media(max-width:650px){
+  .settings-row{display:flex;flex-direction:column;align-items:stretch;gap:14px;padding:18px}
+  .settings-row>div{flex:auto}
+  .settings-row small{max-width:none}
+  .settings-row select,.settings-row .settings-action{width:100%;min-width:0;min-height:52px}
+  .settings-version{align-self:flex-start}
+}
+
+/* Align the logo with the controls below the fullscreen safe area. */
+@media(max-width:650px){
+  .topbar{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;column-gap:12px}
+  .topbar .menu-trigger{grid-column:1}
+  .topbar .header-banner{position:static;transform:none;grid-column:2;justify-self:center;width:min(165px,100%);max-width:100%}
+  .topbar .top-actions{grid-column:3;justify-self:end;margin:0}
+}
+
+/* Desktop and tablet layout: keep navigation and content usable at every width. */
+@media(min-width:651px){
+  .topbar .top-actions{display:none}
+  .sidebar{position:sticky;top:0;height:100vh;height:100dvh;overflow-y:auto;overscroll-behavior:contain}
+  .sidebar .person-nav,.sidebar .nav{min-width:0;overflow-wrap:anywhere}
+  .sidebar .person-row{flex-shrink:0}
+  .main{min-width:0}
+  .topbar{display:flex;gap:20px;padding-inline:clamp(24px,4vw,56px)}
+  .topbar .header-banner{display:none}
+  .topbar .breadcrumb{min-width:0;overflow-wrap:anywhere}
+  .top-actions{margin-left:auto;flex-wrap:wrap;justify-content:flex-end;gap:12px}
+  .content{width:100%;padding-inline:clamp(24px,4vw,56px)}
+  .dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dashboard-card,.dashboard-card-head>div,.dashboard-intro>div{min-width:0;overflow-wrap:anywhere}
+  .medicine{flex-wrap:wrap}
+  .medicine-name{min-width:min(100%,220px);overflow-wrap:anywhere}
+  .form-row>label,.dose-input-row>label{min-width:0}
+}
+@media(min-width:651px) and (max-width:1050px){
+  .sidebar{width:200px;padding-inline:14px}
+  .topbar .local-badge{display:none}
+  .content{padding-top:36px}
+  .dashboard-overview{flex-wrap:wrap}
+  .dashboard-stats{width:100%}
+  .dashboard-stats button{flex:1;min-width:0}
+  .dashboard-grid{grid-template-columns:1fr}
+  .overview{flex-wrap:wrap;gap:20px}
+  .overview .stats{flex-direction:row;flex-wrap:wrap}
+  .page-heading{flex-wrap:wrap}
+}
+@media(min-width:651px) and (max-width:800px){
+  .topbar .help-button{display:none}
+  .form-row,.dose-input-row{flex-wrap:wrap}
+  .form-row>label{flex:1 1 180px}
+  .dose-input-row>label{flex:1 1 140px}
+  .section-heading{flex-wrap:wrap}
+  .search{max-width:100%}
+}
+@media(max-width:650px){
+  .dashboard-card,.dashboard-intro>div,.page-heading-copy{min-width:0;overflow-wrap:anywhere}
+  .dashboard-stats{width:100%;min-width:0}
+  .dashboard-stats button{min-width:0;overflow-wrap:anywhere}
+  .medicine-name,.medicine-meta{overflow-wrap:anywhere}
 }
