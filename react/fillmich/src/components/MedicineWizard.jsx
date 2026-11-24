@@ -3,11 +3,14 @@ import { Capacitor } from '@capacitor/core'
 import { CapacitorBarcodeScanner, CapacitorBarcodeScannerTypeHint } from '@capacitor/barcode-scanner'
 import { findByCode, getPackages, registryStatus, searchRegistry } from '../registry'
 import { parseCode } from '../parseCode'
+import { formatDate } from '../date'
+import { packageTabletCount } from '../inventory'
 import ScanGuide from './ScanGuide'
+import StepProgress from './StepProgress'
 
 const methods = [
   { id: 'registry', icon: '⌕', title: 'Znajdź w rejestrze', description: 'Wyszukaj lek po nazwie i wybierz opakowanie.' },
-  { id: 'scan', icon: '▣', title: 'Zeskanuj kod', description: 'Najpierw EAN, potem Data Matrix z opakowania.' },
+  { id: 'scan', icon: '▣', title: 'Zeskanuj kod EAN', description: 'Zeskanuj kod kreskowy z opakowania.' },
   { id: 'manual', icon: '✎', title: 'Dodaj własny lek', description: 'Wpisz dane samodzielnie, także bez rejestru.' },
 ]
 const emptyForm = person => ({ name: '', person, expiry: '', quantity: '1', code: '', batch: '', stock: '' })
@@ -32,6 +35,9 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
   const video = useRef(null)
   const lookupId = useRef(0)
   const photoId = useRef(0)
+  const scanningUi = step === 2
+  const progressTotal = method === 'manual' ? 5 : 6
+  const progressStep = method === 'manual' && step > 2 ? step : step + 1
 
   useEffect(() => {
     let active = true
@@ -58,8 +64,8 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
       try {
         if (!('BarcodeDetector' in window)) throw new Error('Ta przeglądarka nie obsługuje skanowania. Możesz wpisać kod poniżej.')
         const supported = await window.BarcodeDetector.getSupportedFormats()
-        const formats = (step === 2 ? ['data_matrix'] : ['ean_13', 'ean_8']).filter(format => supported.includes(format))
-        if (!formats.length) throw new Error(step === 2 ? 'Ta przeglądarka nie obsługuje skanowania Data Matrix. Wpisz dane z opakowania ręcznie.' : 'Ta przeglądarka nie obsługuje skanowania kodów EAN. Wpisz kod poniżej.')
+        const formats = (scanningUi ? ['data_matrix'] : ['ean_13', 'ean_8']).filter(format => supported.includes(format))
+        if (!formats.length) throw new Error(scanningUi ? 'Ta przeglądarka nie obsługuje skanowania kodu UI. Wpisz dane z opakowania ręcznie.' : 'Ta przeglądarka nie obsługuje skanowania kodów EAN. Wpisz kod poniżej.')
         const detector = new window.BarcodeDetector({ formats })
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         if (cancelled) { stream.getTracks().forEach(track => track.stop()); return }
@@ -84,12 +90,12 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
   }
   function selectProduct(product) {
     setPackages([]); setPackageState('loading'); setPackageRequest(current => current + 1)
-    setForm(current => ({ ...current, name: product.name, strength: product.strength, productForm: product.form, registryId: product.id, code: product.package?.code || '', packageDescription: product.package?.description || '', selectedPackage: product.package ? `${product.package.code}|${product.package.description}` : '' }))
+    setForm(current => ({ ...current, ...(current.registryId === product.id && current.code === (product.package?.code || '') ? {} : { expiry: '', batch: '' }), name: product.name, strength: product.strength, productForm: product.form, registryId: product.id, code: product.package?.code || '', packageDescription: product.package?.description || '', selectedPackage: product.package ? `${product.package.code}|${product.package.description}` : '' }))
     setQuery(''); setMatches([])
   }
   function selectPackage(value) {
     const pack = packages.find(item => `${item.code}|${item.description}` === value)
-    setForm(current => ({ ...current, selectedPackage: value, code: pack?.code || '', packageDescription: pack?.description || '' }))
+    setForm(current => ({ ...current, ...(current.selectedPackage === value ? {} : { expiry: '', batch: '' }), selectedPackage: value, code: pack?.code || '', packageDescription: pack?.description || '' }))
     setMessage(''); setScanInput('')
   }
   function verifyPackageCode(value) {
@@ -106,13 +112,14 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
     if (!file) return
     const request = ++photoId.current
     const currentStep = step
+    const ui = scanningUi
     let bitmap
     setScanner(false); setReadingPhoto(true); setMessage('')
     try {
       if (!('BarcodeDetector' in window) || typeof createImageBitmap !== 'function') throw new Error('Ta przeglądarka nie obsługuje odczytu kodów ze zdjęcia. Wpisz kod lub dane ręcznie.')
       const supported = await window.BarcodeDetector.getSupportedFormats()
-      const formats = (currentStep === 2 ? ['data_matrix'] : ['ean_13', 'ean_8']).filter(format => supported.includes(format))
-      if (!formats.length) throw new Error(currentStep === 2 ? 'Ta przeglądarka nie obsługuje odczytu Data Matrix ze zdjęcia. Wpisz dane ręcznie.' : 'Ta przeglądarka nie obsługuje odczytu EAN ze zdjęcia. Wpisz kod ręcznie.')
+      const formats = (ui ? ['data_matrix'] : ['ean_13', 'ean_8']).filter(format => supported.includes(format))
+      if (!formats.length) throw new Error(ui ? 'Ta przeglądarka nie obsługuje odczytu kodu UI ze zdjęcia. Wpisz dane ręcznie.' : 'Ta przeglądarka nie obsługuje odczytu EAN ze zdjęcia. Wpisz kod ręcznie.')
       bitmap = await createImageBitmap(file)
       const codes = await new window.BarcodeDetector({ formats }).detect(bitmap)
       if (request !== photoId.current) return
@@ -134,7 +141,7 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
     const request = ++photoId.current
     setNativeScanning(true)
     try {
-      const result = await CapacitorBarcodeScanner.scanBarcode({ hint: step === 2 ? CapacitorBarcodeScannerTypeHint.DATA_MATRIX : CapacitorBarcodeScannerTypeHint.ALL, scanInstructions: step === 2 ? 'Zeskanuj kod Data Matrix' : 'Zeskanuj kod EAN' })
+      const result = await CapacitorBarcodeScanner.scanBarcode({ hint: scanningUi ? CapacitorBarcodeScannerTypeHint.DATA_MATRIX : CapacitorBarcodeScannerTypeHint.ALL, scanInstructions: scanningUi ? 'Zeskanuj kod UI' : 'Zeskanuj kod EAN' })
       if (request !== photoId.current) return
       setScanInput(result.ScanResult)
       if (step === 2) verifyPackageCode(result.ScanResult)
@@ -163,32 +170,32 @@ export default function MedicineWizard({ people, initialPerson, onClose, onSave 
   const productReady = form.name.trim() && (method !== 'scan' || /^(?:\d{8}|\d{13}|\d{14})$/.test(form.code)) && (!form.registryId || (packageState === 'ready' && (!packages.length || form.selectedPackage)))
   const next = event => {
     event.preventDefault()
-    if (step === 1 && productReady && !lookingUp && !readingPhoto && !nativeScanning) { setScanner(false); setMessage(''); setScanInput(''); setStep(2) }
-    else if (step === 2 && !readingPhoto && !nativeScanning) { setScanner(false); setStep(3) }
-    else if (step === 3) onSave({ ...form, name: form.name.trim(), stock: form.stock === '' ? null : Number(form.stock) })
+    if (step === 1 && productReady && !lookingUp && !readingPhoto && !nativeScanning) { setScanner(false); setMessage(''); setScanInput(''); setStep(method === 'manual' ? 3 : 2) }
+    else if (step >= 2 && step < 5 && !readingPhoto && !nativeScanning) { setScanner(false); setMessage(''); setScanInput(''); setStep(step + 1) }
+    else if (step === 5) onSave({ ...form, name: form.name.trim(), stock: form.stock === '' ? null : Number(form.stock) })
   }
-  const back = () => { photoId.current += 1; setReadingPhoto(false); setScanner(false); if (step === 1) { lookupId.current += 1; setLookingUp(false); setStep(0) } else setStep(step - 1) }
+  const back = () => { photoId.current += 1; setReadingPhoto(false); setScanner(false); setMessage(''); setScanInput(''); if (step === 1) { lookupId.current += 1; setLookingUp(false); setStep(0) } else setStep(step === 3 && method === 'manual' ? 1 : step - 1) }
 
   return <div className="overlay" onClick={onClose}>
     <section className="dialog wizard" role="dialog" aria-modal="true" aria-labelledby="wizard-title" onClick={event => event.stopPropagation()}>
       <button className="close" onClick={onClose} aria-label="Zamknij dodawanie leku">×</button>
       <div className="eyebrow">NOWY LEK W APTECZCE</div><h2 id="wizard-title">Dodaj lek</h2>
-      <div className="wizard-progress" aria-label={`Krok ${step + 1} z 4`}>
-        {['Sposób', 'Lek', 'Dane', 'Gotowe'].map((label, index) => <div key={label} className={index === step ? 'current' : index < step ? 'done' : ''}><span>{index < step ? '✓' : index + 1}</span><small>{label}</small></div>)}
-      </div>
+      <StepProgress current={progressStep} total={progressTotal} />
       {step === 0 ? <div className="wizard-body"><h3>Jak chcesz dodać lek?</h3><p>Wybierz najwygodniejszy sposób. W kolejnych krokach uzupełnisz szczegóły.</p><div className="method-list">{methods.map(item => <button type="button" key={item.id} className="method-card" onClick={() => chooseMethod(item.id)}><span className="method-icon">{item.id === 'scan' ? <span className="scan-mark" aria-hidden="true" /> : item.icon}</span><span><strong>{item.title}</strong><small>{item.description}</small></span><span className="method-arrow">→</span></button>)}</div></div> : <form onSubmit={next}>
-        {step === 1 && <div className="wizard-body"><h3>{method === 'registry' ? 'Znajdź swój lek' : method === 'scan' ? 'Odczytaj kod opakowania' : 'Wpisz nazwę leku'}</h3>
+        {step === 1 && <div className="wizard-body"><h3>{method === 'registry' ? 'Znajdź swój lek' : method === 'scan' ? 'Odczytaj kod EAN' : 'Wpisz nazwę leku'}</h3>
           {method === 'registry' && <><p>Wpisz nazwę i wybierz produkt o właściwej mocy i postaci.</p><label>Wyszukaj w rejestrze<input value={query} onChange={event => { setQuery(event.target.value); setMatches([]) }} placeholder="Np. Apap" /></label><p className="registry-state">{registryState === 'loading' ? 'Trwa przygotowanie rejestru…' : registryState === 'error' ? 'Rejestr jest niedostępny. Wróć i wybierz dodawanie ręczne.' : 'Wpisz co najmniej 2 litery.'}</p></>}
-          {method === 'scan' && <><p>Najpierw zeskanuj kod kreskowy EAN lub wpisz cyfry spod kodu. W kolejnym kroku możesz zeskanować Data Matrix.</p><ScanGuide type="ean" /><button type="button" className="scan-button" disabled={nativeScanning || readingPhoto} onClick={startScanner}><span className="scan-mark" aria-hidden="true" /><span>{scanner ? 'Zamknij aparat' : 'Skanuj EAN / GTIN'}</span></button>{scanner && <video className="camera" ref={video} playsInline muted />}{photoPicker}<label>Kod EAN<div className="code-row"><input inputMode="numeric" value={scanInput} onChange={event => { lookupId.current += 1; setLookingUp(false); setScanInput(event.target.value); setForm(current => ({ ...current, code: '', name: '', registryId: '', selectedPackage: '', packageDescription: '' })); setMatches([]); setMessage('') }} placeholder="Wpisz cyfry kodu EAN" /><button type="button" className="secondary" disabled={!scanInput || lookingUp} onClick={() => lookupCode(scanInput)}>Odczytaj</button></div></label>{message && <p className="wizard-message" role="status">{message}</p>}</>}
+          {method === 'scan' && <><p>Zeskanuj kod kreskowy EAN lub wpisz cyfry spod kodu. Oznacza on rodzaj opakowania i pomaga znaleźć lek w rejestrze.</p><ScanGuide type="ean" /><button type="button" className="scan-button" disabled={nativeScanning || readingPhoto} onClick={startScanner}><span className="scan-mark" aria-hidden="true" /><span>{scanner ? 'Zamknij aparat' : 'Skanuj EAN / GTIN'}</span></button>{scanner && <video className="camera" ref={video} playsInline muted />}{photoPicker}<label>Kod EAN<div className="code-row"><input inputMode="numeric" value={scanInput} onChange={event => { lookupId.current += 1; setLookingUp(false); setScanInput(event.target.value); setForm(current => ({ ...current, code: '', name: '', registryId: '', selectedPackage: '', packageDescription: '' })); setMatches([]); setMessage('') }} placeholder="Wpisz cyfry kodu EAN" /><button type="button" className="secondary" disabled={!scanInput || lookingUp} onClick={() => lookupCode(scanInput)}>Odczytaj</button></div></label>{message && <p className="wizard-message" role="status">{message}</p>}</>}
           {matches.length > 0 && <div className="registry-results">{matches.map((product, index) => <button type="button" key={`${product.id}-${index}`} onClick={() => selectProduct(product)}><strong>{product.name}</strong><span>{[product.strength, product.form, product.package?.description].filter(Boolean).join(' · ')}</span></button>)}</div>}
           {(method === 'manual' || (method === 'scan' && !form.registryId)) && <label>Nazwa leku<input required value={form.name} onChange={event => update('name', event.target.value)} placeholder="Np. Ibuprofen" /></label>}
           {method === 'manual' && <><label>Moc lub dawka na tabletkę<input value={form.strength || ''} onChange={event => update('strength', event.target.value)} placeholder="Np. 200 mg (opcjonalnie)" /></label><label>Opis opakowania<input value={form.packageDescription || ''} onChange={event => update('packageDescription', event.target.value)} placeholder="Np. 20 tabletek (opcjonalnie)" /></label></>}
           {form.registryId && <div className="chosen-product"><small>WYBRANY PRODUKT</small><strong>{form.name}</strong><span>{[form.strength, form.productForm].filter(Boolean).join(' · ')}</span></div>}
-          {form.registryId && (packageState === 'loading' ? <p>Wczytywanie opakowań…</p> : packageState === 'error' ? <div className="package-error" role="alert"><p className="error">{packageError}</p><button type="button" className="button-quiet" onClick={() => { setPackageState('loading'); setPackageRequest(current => current + 1) }}>Spróbuj ponownie</button></div> : packages.length ? <label>Wybierz opakowanie<select required value={form.selectedPackage || ''} onChange={event => selectPackage(event.target.value)}><option value="">Wybierz wielkość opakowania</option>{packages.map(pack => <option key={`${pack.code}|${pack.description}`} value={`${pack.code}|${pack.description}`}>{pack.description || 'Opakowanie bez opisu'}{pack.code ? ` · GTIN ${pack.code}` : ' · bez kodu GTIN'}</option>)}</select></label> : <p>Rejestr nie podaje opakowań dla tego leku.</p>)}
+          {form.registryId && (packageState === 'loading' ? <p>Wczytywanie opakowań…</p> : packageState === 'error' ? <div className="package-error" role="alert"><p className="error">{packageError}</p><button type="button" className="button-quiet" onClick={() => { setPackageState('loading'); setPackageRequest(current => current + 1) }}>Spróbuj ponownie</button></div> : packages.length ? <fieldset className="package-options"><legend>Wybierz opakowanie</legend>{packages.map(pack => { const value = `${pack.code}|${pack.description}`; return <label className={`package-option ${form.selectedPackage === value ? 'selected' : ''}`} key={value}><input type="radio" name="package" value={value} checked={form.selectedPackage === value} onChange={() => selectPackage(value)} /><span><strong>{pack.description || 'Opakowanie bez opisu'}</strong><small>{pack.code ? `GTIN ${pack.code}` : 'Bez kodu GTIN'}</small></span></label> })}</fieldset> : <p>Rejestr nie podaje opakowań dla tego leku.</p>)}
         </div>}
-        {step === 2 && <div className="wizard-body"><h3>{method !== 'manual' ? 'Zeskanuj Data Matrix' : 'Szczegóły opakowania'}</h3>{method !== 'manual' && <><p>Zeskanuj kwadratowy kod Data Matrix z tego samego opakowania. Sprawdzimy GTIN i odczytamy datę ważności oraz numer partii, jeśli są dostępne. Możesz też uzupełnić je ręcznie poniżej.</p><ScanGuide type="matrix" /><button type="button" className="scan-button" disabled={nativeScanning || readingPhoto} onClick={startScanner}><span className="scan-mark" aria-hidden="true" /><span>{scanner ? 'Zamknij aparat' : 'Skanuj Data Matrix'}</span></button>{scanner && <video className="camera" ref={video} playsInline muted />}{photoPicker}<label>Dane GS1 Data Matrix<div className="code-row"><input value={scanInput} onChange={event => setScanInput(event.target.value)} placeholder="Wpisz lub zeskanuj kod" /><button type="button" className="secondary" disabled={!scanInput.trim()} onClick={() => verifyPackageCode(scanInput)}>Sprawdź</button></div></label>{message && <p className="wizard-message" role="status">{message}</p>}</>}<p>Przypisz lek i uzupełnij informacje, które znajdziesz na pudełku.</p><div className="form-row"><label>Dla kogo<select value={form.person} onChange={event => update('person', event.target.value)}>{people.map(person => <option key={person}>{person}</option>)}</select></label><label>Termin ważności<input type="date" value={form.expiry} onChange={event => update('expiry', event.target.value)} /></label></div><div className="form-row"><label>Liczba opakowań<input type="number" min="1" step="1" required value={form.quantity} onChange={event => update('quantity', event.target.value)} /></label><label>Numer partii<input value={form.batch} onChange={event => update('batch', event.target.value)} placeholder="Opcjonalnie" /></label></div><label>Ile tabletek zostało?<input type="number" min="0" max="1000000" step="0.01" value={form.stock} onChange={event => update('stock', event.target.value)} placeholder="Opcjonalnie" /></label><p className="form-hint">Podaj łączną liczbę tabletek we wszystkich dodawanych opakowaniach. Pozostaw puste, jeśli nie znasz stanu lub to nie są tabletki.</p><p className="form-hint">Sprawdź datę i numer partii na opakowaniu, również gdy zostały odczytane z kodu.</p></div>}
-        {step === 3 && <div className="wizard-body"><h3>Sprawdź przed zapisaniem</h3><p>Upewnij się, że dane odpowiadają opakowaniu, które masz w domu.</p><dl className="summary-list">{[['Lek', form.name], ['Moc i postać', [form.strength, form.productForm].filter(Boolean).join(' · ')], ['Opakowanie', form.packageDescription], ['Kod', form.code], ['Dla kogo', form.person], ['Termin ważności', form.expiry || 'Nie podano'], ['Liczba opakowań', form.quantity], ['Pozostało tabletek', form.stock === '' ? 'Nie podano' : form.stock], ['Numer partii', form.batch]].filter(([, value]) => value).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>}
-        <div className="wizard-actions"><button type="button" className="button-quiet" onClick={back}>← Wstecz</button><button className="primary" disabled={readingPhoto || nativeScanning || (step === 1 && (!productReady || lookingUp))}>{step === 3 ? 'Zapisz lek' : 'Dalej →'}</button></div>
+        {step === 2 && <div className="wizard-body"><h3>Kod UI (Unikalny Identyfikator)</h3><p>Opcjonalnie zeskanuj kwadratowy kod UI z tego samego opakowania lub przejdź dalej. Sprawdzimy GTIN i odczytamy datę ważności oraz numer partii, jeśli są dostępne. Możesz też uzupełnić je ręcznie poniżej.</p><ScanGuide type="matrix" /><button type="button" className="scan-button" disabled={nativeScanning || readingPhoto} onClick={startScanner}><span className="scan-mark" aria-hidden="true" /><span>{scanner ? 'Zamknij aparat' : 'Skanuj kod UI'}</span></button>{scanner && <video className="camera" ref={video} playsInline muted />}{photoPicker}<label>Dane kodu UI<div className="code-row"><input value={scanInput} onChange={event => setScanInput(event.target.value)} placeholder="Wpisz lub zeskanuj kod" /><button type="button" className="secondary" disabled={!scanInput.trim()} onClick={() => verifyPackageCode(scanInput)}>Sprawdź</button></div></label>{message && <p className="wizard-message" role="status">{message}</p>}</div>}
+        {step === 3 && <div className="wizard-body"><h3>Dane opakowania</h3><p>Sprawdź dane na opakowaniu, także jeśli zostały odczytane z kodu UI.</p><label>Termin ważności<input type="date" lang="pl" value={form.expiry} onChange={event => update('expiry', event.target.value)} /></label><label>Numer partii<input value={form.batch} onChange={event => update('batch', event.target.value)} placeholder="Opcjonalnie" /></label></div>}
+        {step === 4 && <div className="wizard-body"><h3>Osoba i zapas</h3><p>Przypisz lek i podaj stan swojego zapasu.</p><label>Dla kogo<select value={form.person} onChange={event => update('person', event.target.value)}>{people.map(person => <option key={person} value={person}>{person === 'Wspólne' ? 'Bez przypisania' : person}</option>)}</select></label><label>Liczba opakowań<input type="number" min="1" step="1" required value={form.quantity} onChange={event => update('quantity', event.target.value)} /></label><label>Ile tabletek zostało?<input type="number" min="0" max={packageTabletCount(form.packageDescription) ?? 1000000} step="any" inputMode="decimal" value={form.stock} onChange={event => update('stock', event.target.value)} placeholder="Opcjonalnie" /></label><p className="form-hint">{packageTabletCount(form.packageDescription) !== null ? `W opakowaniu jest maksymalnie ${packageTabletCount(form.packageDescription)} tabletek. ` : ''}Pozostaw puste, jeśli nie znasz stanu lub to nie są tabletki.</p></div>}
+        {step === 5 && <div className="wizard-body"><h3>Sprawdź przed zapisaniem</h3><p>Upewnij się, że dane odpowiadają opakowaniu, które masz w domu.</p><dl className="summary-list">{[['Lek', form.name], ['Moc i postać', [form.strength, form.productForm].filter(Boolean).join(' · ')], ['Opakowanie', form.packageDescription], ['Kod', form.code], ['Dla kogo', form.person === 'Wspólne' ? 'Bez przypisania' : form.person], ['Termin ważności', formatDate(form.expiry) || 'Nie podano'], ['Liczba opakowań', form.quantity], ['Pozostało tabletek', form.stock === '' ? 'Nie podano' : form.stock], ['Numer partii', form.batch]].filter(([, value]) => value).map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>}
+        <div className="wizard-actions"><button type="button" className="button-quiet" onClick={back}>← Wstecz</button><button className="primary" disabled={readingPhoto || nativeScanning || (step === 1 && (!productReady || lookingUp))}>{step === 5 ? 'Zapisz lek' : 'Dalej →'}</button></div>
       </form>}
     </section>
   </div>

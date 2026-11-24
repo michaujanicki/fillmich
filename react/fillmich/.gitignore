@@ -25,3 +25,8 @@ dist-ssr
 
 data/
 public/registry-snapshot.json
+
+# Lokalne klucze podpisujace i konfiguracja podpisu
+*.jks
+*.keystore
+keystore.properties

@@ -2,6 +2,18 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        const theme = JSON.parse(localStorage.getItem('fillmich-theme')) === 'dark' ? 'dark' : 'light'
+        document.documentElement.dataset.theme = theme
+        document.documentElement.style.colorScheme = theme
+        const size = JSON.parse(localStorage.getItem('fillmich-text-size'))
+        document.documentElement.dataset.textSize = ['standard', 'medium', 'large', 'extra', 'extreme'].includes(size) ? size : 'medium'
+      } catch {
+        document.documentElement.dataset.theme = 'light'
+        document.documentElement.dataset.textSize = 'medium'
+      }
+    </script>
     <link rel="icon" type="image/svg+xml" href="/fillmich-icon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>fillmich</title>

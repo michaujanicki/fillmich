@@ -8,7 +8,7 @@ export default function ScanGuide({ type }) {
   const closeRef = useRef(null)
   const triggerRef = useRef(null)
   const ean = type === 'ean'
-  const title = ean ? 'Tak wygląda kod EAN' : 'Tak wygląda Data Matrix'
+  const title = ean ? 'Tak wygląda kod EAN' : 'Tak wygląda kod UI (Unikalny Identyfikator)'
   const alt = ean ? 'Przykładowe opakowania z podłużnym kodem kreskowym.' : 'Przykładowe opakowania z kwadratowym kodem Data Matrix.'
   const src = ean ? eanImage : matrixImage
 

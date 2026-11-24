@@ -23,10 +23,21 @@ export function forecastShortage(medicine, plans, history, today) {
 }
 
 export function stockTransition(medicine, dose, existing) {
-  if (existing) return { delta: typeof existing === 'object' && existing.deducted ? Number(existing.amount) : 0, entry: null }
+  if (existing) {
+    const delta = typeof existing === 'object' && existing.deducted ? Number(existing.amount) : 0
+    const limit = packageTabletCount(medicine.packageDescription)
+    if (delta && hasStock(medicine) && limit !== null && round(Number(medicine.stock) + delta) > limit) return { error: 'capacity' }
+    return { delta, entry: null }
+  }
   if (!hasStock(medicine)) return { delta: 0, entry: { amount: Number(dose.amount), deducted: false, medicineId: medicine.id } }
   if (round(Number(medicine.stock)) < round(Number(dose.amount))) return { error: true }
   return { delta: -Number(dose.amount), entry: { amount: Number(dose.amount), deducted: true, medicineId: medicine.id } }
 }
 
 export const adjustStock = (value, delta) => round(Number(value) + delta)
+
+// Only infer a limit from an unambiguous tablet-only package description.
+export const packageTabletCount = description => {
+  const match = /^\s*(\d+)\s*(?:tabl\.?|tabletka|tabletki|tabletek)\s*$/i.exec(description || '')
+  return match && Number(match[1]) > 0 ? Number(match[1]) : null
+}
