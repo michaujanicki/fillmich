@@ -17,7 +17,7 @@ let running = false
 let lastError = ''
 const metadata = db.prepare('SELECT value FROM metadata WHERE key = ?')
 const getUpdatedAt = () => metadata.get('updated_at')?.value || null
-export function status() { return { updatedAt: getUpdatedAt(), importing: running, error: lastError, count: db.prepare('SELECT count(*) AS count FROM products').get().count } }
+export function status() { return { updatedAt: getUpdatedAt(), registryDate: metadata.get('registry_date')?.value || null, importing: running, error: lastError, count: db.prepare('SELECT count(*) AS count FROM products').get().count } }
 export function search(query, code) {
   if (code) {
     if (!/^\d{8,14}$/.test(code)) return []
@@ -30,6 +30,10 @@ export function search(query, code) {
 export function packagesForProduct(id) {
   if (!/^\d{1,30}$/.test(id)) return []
   return db.prepare('SELECT DISTINCT code, description FROM packages WHERE product_id = ? ORDER BY description, code').all(id)
+}
+export function productById(id) {
+  if (!/^\d{1,30}$/.test(id)) return null
+  return db.prepare('SELECT id,name,strength,form,leaflet FROM products WHERE id = ?').get(id) || null
 }
 export async function refresh() {
   if (running) return

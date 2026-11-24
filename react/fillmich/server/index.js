@@ -2,7 +2,7 @@ import { createServer } from 'node:http'
 import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { createServer as createViteServer } from 'vite'
-import { packagesForProduct, scheduleRefresh, search, status } from './registry.js'
+import { packagesForProduct, productById, refresh, scheduleRefresh, search, status } from './registry.js'
 
 const production = process.argv.includes('--production')
 const vite = production ? null : await createViteServer({ server: { middlewareMode: true }, appType: 'spa' })
@@ -12,8 +12,13 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost')
   if (url.pathname.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
+    if (url.pathname === '/api/registry/refresh' && req.method === 'POST') {
+      if (req.headers.origin !== `http://${req.headers.host}` || req.headers['content-type'] !== 'application/json') { res.writeHead(403); res.end(JSON.stringify({ error: 'Forbidden' })); return }
+      void refresh(); res.writeHead(202); res.end(JSON.stringify(status())); return
+    }
     if (req.method !== 'GET') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return }
     if (url.pathname === '/api/registry/status') { res.end(JSON.stringify(status())); return }
+    if (url.pathname === '/api/registry/product') { res.end(JSON.stringify(productById(url.searchParams.get('id') || ''))); return }
     if (url.pathname === '/api/registry/packages') { res.end(JSON.stringify(packagesForProduct(url.searchParams.get('productId') || ''))); return }
     if (url.pathname === '/api/registry/search') { res.end(JSON.stringify(search((url.searchParams.get('q') || '').slice(0, 100), url.searchParams.get('code') || ''))); return }
     res.writeHead(404); res.end(JSON.stringify({ error: 'Not found' })); return

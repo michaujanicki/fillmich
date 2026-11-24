@@ -1,12 +1,12 @@
 ﻿import { Capacitor } from '@capacitor/core'
+import { downloadSnapshot, readSavedSnapshot } from './registryUpdate'
 const getJson = async url => {
   const response = await fetch(url)
   if (!response.ok) { const error = new Error(`Registry request failed (${response.status})`); error.status = response.status; throw error }
   return response.json()
 }
 let snapshotPromise
-function snapshot() {
-  if (!snapshotPromise) snapshotPromise = getJson('./registry-snapshot.json').then(data => {
+function indexSnapshot(data) {
     const byId = new Map(data.products.map(product => [product.id, product]))
     const byProduct = new Map(), byCode = new Map()
     for (const item of data.packages) {
@@ -19,13 +19,24 @@ function snapshot() {
       }
     }
     return { ...data, byProduct, byCode }
-  }).catch(error => { snapshotPromise = null; throw error })
+}
+function snapshot() {
+  if (!snapshotPromise) snapshotPromise = Promise.all([getJson('./registry-snapshot.json'), readSavedSnapshot().catch(() => null)]).then(([bundled, saved]) => indexSnapshot(saved && Date.parse(saved.updatedAt) > Date.parse(bundled.updatedAt || 0) ? saved : bundled)).catch(error => { snapshotPromise = null; throw error })
   return snapshotPromise
 }
 export async function registryStatus() {
   if (!Capacitor.isNativePlatform()) return getJson('/api/registry/status')
   const data = await snapshot()
-  return { count: data.products.length, updatedAt: data.updatedAt, importing: false }
+  return { count: data.products.length, updatedAt: data.updatedAt, registryDate: data.registryDate, importing: false }
+}
+export async function updateRegistry() {
+  if (!Capacitor.isNativePlatform()) {
+    const response = await fetch('/api/registry/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
+    if (!response.ok) throw new Error('Nie udało się rozpocząć aktualizacji')
+    return
+  }
+  const data = await downloadSnapshot()
+  snapshotPromise = Promise.resolve(indexSnapshot(data))
 }
 export async function searchRegistry(query) {
   if (!Capacitor.isNativePlatform()) return getJson(`/api/registry/search?q=${encodeURIComponent(query)}`)
@@ -44,4 +55,8 @@ export async function getPackages(id) {
   if (!Capacitor.isNativePlatform()) return getJson(`/api/registry/packages?productId=${encodeURIComponent(id)}`)
   const data = await snapshot()
   return [...new Map((data.byProduct.get(id) || []).map(pack => [`${pack.code}|${pack.description}`, pack])).values()]
+}
+export async function getProduct(id) {
+  if (!Capacitor.isNativePlatform()) return getJson(`/api/registry/product?id=${encodeURIComponent(id)}`)
+  return (await snapshot()).byId.get(id) || null
 }
