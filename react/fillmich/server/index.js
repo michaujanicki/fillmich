@@ -7,7 +7,23 @@ import { packagesForProduct, productById, refresh, scheduleRefresh, search, stat
 const production = process.argv.includes('--production')
 const vite = production ? null : await createViteServer({ server: { middlewareMode: true }, appType: 'spa' })
 const dist = resolve('dist')
-const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' }
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' }
+const leafletPattern = /^https:\/\/rejestry\.ezdrowie\.gov\.pl\/api\/rpl\/medicinal-products\/\d+\/leaflet$/
+const maxLeafletBytes = 20 * 1024 * 1024
+async function sendLeaflet(id, res) {
+  const leaflet = productById(id)?.leaflet
+  if (!leaflet || !leafletPattern.test(leaflet)) { res.writeHead(404); res.end(JSON.stringify({ error: 'Leaflet not found' })); return }
+  try {
+    const response = await fetch(leaflet, { signal: AbortSignal.timeout(60000), redirect: 'error' })
+    if (!response.ok || !response.body || !response.headers.get('content-type')?.toLowerCase().startsWith('application/pdf')) throw new Error('Invalid response')
+    if (Number(response.headers.get('content-length')) > maxLeafletBytes) throw new Error('Leaflet too large')
+    const chunks = []; let size = 0
+    for await (const chunk of response.body) { size += chunk.length; if (size > maxLeafletBytes) throw new Error('Leaflet too large'); chunks.push(chunk) }
+    const data = Buffer.concat(chunks)
+    if (data.subarray(0, 5).toString() !== '%PDF-') throw new Error('Invalid PDF')
+    res.setHeader('Content-Type', 'application/pdf'); res.setHeader('Cache-Control', 'no-store'); res.end(data)
+  } catch { res.writeHead(502); res.end(JSON.stringify({ error: 'Leaflet unavailable' })) }
+}
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost')
   if (url.pathname.startsWith('/api/')) {
@@ -19,6 +35,7 @@ const server = createServer(async (req, res) => {
     if (req.method !== 'GET') { res.writeHead(405); res.end(JSON.stringify({ error: 'Method not allowed' })); return }
     if (url.pathname === '/api/registry/status') { res.end(JSON.stringify(status())); return }
     if (url.pathname === '/api/registry/product') { res.end(JSON.stringify(productById(url.searchParams.get('id') || ''))); return }
+    if (url.pathname === '/api/registry/leaflet') { await sendLeaflet(url.searchParams.get('id') || '', res); return }
     if (url.pathname === '/api/registry/packages') { res.end(JSON.stringify(packagesForProduct(url.searchParams.get('productId') || ''))); return }
     if (url.pathname === '/api/registry/search') { res.end(JSON.stringify(search((url.searchParams.get('q') || '').slice(0, 100), url.searchParams.get('code') || ''))); return }
     res.writeHead(404); res.end(JSON.stringify({ error: 'Not found' })); return

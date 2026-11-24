@@ -28,7 +28,7 @@ Celem projektu jest ułatwienie domownikom prowadzenia wspólnej ewidencji lekó
 
 - Dodawanie leków do apteczki, edycja ich danych, zdjęć, stanu i terminu ważności.
 - Wyszukiwanie produktów w Rejestrze Produktów Leczniczych oraz odczyt kodów z opakowań. Dostępność odczytu zależy od urządzenia i obsługi kodu.
-- Otwieranie ulotki dla pacjenta, jeśli rejestr udostępnia ją dla wybranego leku.
+- Przeglądanie ulotki dla pacjenta w aplikacji, jeśli rejestr udostępnia ją dla wybranego leku. Dostępne są zmiana stron i powiększenie; pobranie ulotki wymaga internetu.
 - Aktualizacja lokalnej bazy rejestru w ustawieniach aplikacji.
 - Przypisywanie leków do osób lub przechowywanie ich jako wspólnych, filtrowanie i wyszukiwanie w apteczce.
 - Oznaczanie leków przeterminowanych i tych, których termin ważności upływa w ciągu 90 dni.
@@ -81,6 +81,10 @@ npm run android:open
 
 W Android Studio wybierz telefon lub emulator i uruchom aplikację przyciskiem **Run**. APK do ręcznej instalacji można zbudować przez **Build → Build Bundle(s) / APK(s) → Build APK(s)**.
 
+### Podpisany pakiet release
+
+Po synchronizacji otwórz projekt Androida i w Android Studio wybierz **Build → Generate Signed Bundle / APK**. Wybierz APK lub Android App Bundle, wskaż klucz wydawniczy, a następnie wybierz wariant **release** i zakończ budowanie. Aby zaktualizować aplikację już zainstalowaną na urządzeniu, podpisz nowy pakiet tym samym kluczem co poprzednie wydanie. Numer wersji i kod wersji są pobierane z `src/version.json`.
+
 Polecenie `android:sync` przygotowuje grafikę aplikacji, eksportuje lokalną bazę rejestru, buduje aplikację i synchronizuje projekt Capacitor. Wyszukiwanie w zainstalowanej aplikacji korzysta z lokalnej kopii rejestru i nie wymaga serwera. Kopię można odświeżyć w ustawieniach aplikacji za pomocą przycisku **Sprawdź i aktualizuj**. Pobranie całego rejestru wymaga internetu i może zużyć dużo danych. Odczyt kodów ze zdjęć zależy od możliwości systemowej przeglądarki WebView.
 
 ## Dane i rejestr leków
@@ -110,6 +114,7 @@ Serwer pobiera oficjalny [eksport Rejestru Produktów Leczniczych](https://rejes
 | Node.js | Serwer HTTP, API wyszukiwania i import rejestru. |
 | SQLite | Przechowywanie lokalnej kopii rejestru leków na serwerze. |
 | XML i Saxes | Odczyt i przetwarzanie eksportu rejestru. |
+| PDF.js | Wyświetlanie ulotek PDF w aplikacji. |
 | Capacitor i Android Studio | Przygotowanie i uruchamianie aplikacji na Androidzie. |
 | localStorage i IndexedDB | Lokalne przechowywanie danych apteczki oraz pobranej kopii rejestru na Androidzie. |
 

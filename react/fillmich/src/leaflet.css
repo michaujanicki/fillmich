@@ -1,0 +1,29 @@
+.medicine-leaflet { margin-top: 20px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); }
+.medicine-leaflet strong { display: block; font-size: var(--reading-text); }
+.medicine-leaflet p { margin: 8px 0 0; font-size: var(--reading-detail); }
+.medicine-leaflet .leaflet-open { min-height: 48px; margin-top: 12px; padding: 10px 16px; }
+.leaflet-overlay { z-index: 1200; padding: 0; }
+.dialog.leaflet-dialog { display: flex; flex-direction: column; width: 100%; max-width: none; height: 100%; height: 100dvh; max-height: none; padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left)); overflow: hidden; border: 0; border-radius: 0; }
+.leaflet-header { flex: none; padding-right: 55px; }
+.dialog .leaflet-header h2 { padding: 0; overflow-wrap: anywhere; }
+.leaflet-header p { margin: 4px 0 14px; font-size: var(--reading-detail); }
+.leaflet-toolbar { display: flex; flex: none; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+.leaflet-pages, .leaflet-zoom { display: flex; align-items: center; gap: 8px; }
+.leaflet-toolbar button { min-height: 48px; padding: 8px 12px; }
+.leaflet-toolbar button:disabled { opacity: .5; cursor: not-allowed; }
+.leaflet-pages span, .leaflet-zoom span { color: var(--text); font-size: var(--reading-detail); font-weight: 700; text-align: center; }
+.leaflet-zoom button { min-width: 48px; font-size: 22px; }
+.leaflet-viewport { position: relative; flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface-soft); text-align: center; }
+.leaflet-viewport canvas { display: block; max-width: none; margin: 0 auto; background: white; box-shadow: 0 4px 18px #0002; }
+.leaflet-viewport:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.leaflet-rendering { display: block; padding: 10px; color: var(--text); }
+.leaflet-error { padding: 24px; }
+.leaflet-error button { min-height: 48px; padding: 10px 16px; }
+@media (max-width: 650px) {
+  .dialog.leaflet-dialog { padding: max(16px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); border-radius: 0; }
+  .leaflet-toolbar { gap: 8px; }
+  .leaflet-pages { flex: 1 1 100%; justify-content: space-between; }
+  .leaflet-pages button { flex: 1; }
+  .leaflet-zoom { margin-left: auto; }
+  .leaflet-viewport { padding: 12px; }
+}

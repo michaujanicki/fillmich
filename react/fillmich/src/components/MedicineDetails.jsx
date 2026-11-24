@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import Dialog from './Dialog'
 import { formatDate } from '../date'
 import { formatAmount, hasStock, packageTabletCount } from '../inventory'
 import { getProduct } from '../registry'
+import LeafletViewer from './LeafletViewer'
 
 export default function MedicineDetails({ medicine, onClose, onEdit, onStock }) {
-  const closeButton = useRef(null)
   const [leaflet, setLeaflet] = useState(medicine.leaflet || '')
   const [leafletState, setLeafletState] = useState(medicine.registryId ? 'loading' : 'ready')
+  const [showLeaflet, setShowLeaflet] = useState(false)
   useEffect(() => {
     let active = true
     if (!medicine.registryId) return () => { active = false }
@@ -15,13 +17,6 @@ export default function MedicineDetails({ medicine, onClose, onEdit, onStock }) 
     }).catch(() => { if (active) setLeafletState('error') })
     return () => { active = false }
   }, [medicine.registryId, medicine.leaflet])
-  useEffect(() => {
-    const previous = document.activeElement
-    closeButton.current?.focus()
-    const onKey = event => { if (event.key === 'Escape') onClose() }
-    window.addEventListener('keydown', onKey)
-    return () => { window.removeEventListener('keydown', onKey); previous?.focus() }
-  }, [onClose])
 
   const limit = packageTabletCount(medicine.packageDescription)
   const stock = hasStock(medicine) ? `${formatAmount(medicine.stock)}${limit !== null ? ` / ${formatAmount(limit)}` : ''} tabl.` : 'Nie podano'
@@ -38,14 +33,11 @@ export default function MedicineDetails({ medicine, onClose, onEdit, onStock }) 
     ['Numer partii', medicine.batch || 'Nie podano'],
   ]
 
-  return <div className="overlay" onClick={onClose}>
-    <section className="dialog medicine-details-dialog" role="dialog" aria-modal="true" aria-labelledby="medicine-details-title" onClick={event => event.stopPropagation()}>
-      <button ref={closeButton} type="button" className="close" aria-label="Zamknij szczegóły" onClick={onClose}>×</button>
+  return <><Dialog className="medicine-details-dialog" titleId="medicine-details-title" onClose={onClose} closeLabel="Zamknij szczegóły">
       <div className="eyebrow">TWOJA APTECZKA</div>
       <div className="medicine-details-header">{medicine.photo && <img src={medicine.photo} alt="" />}<div><h2 id="medicine-details-title">{medicine.name}</h2><p>Zapisane informacje o leku</p></div></div>
       <dl className="medicine-details-list">{details.map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-      <div className="medicine-leaflet"><strong>Ulotka dla pacjenta</strong><p>{leafletState === 'loading' ? 'Sprawdzanie ulotki w rejestrze…' : leafletUrl ? <a href={leafletUrl} target="_blank" rel="noopener noreferrer">Otwórz ulotkę ↗</a> : leafletState === 'error' ? 'Nie udało się sprawdzić ulotki w rejestrze. Spróbuj ponownie później.' : medicine.registryId ? 'Rejestr nie udostępnia ulotki dla tego leku.' : 'Brak ulotki — lek nie jest powiązany z rejestrem.'}</p>{leafletState === 'error' && leafletUrl && <p>Nie udało się sprawdzić aktualnego adresu w rejestrze.</p>}</div>
+      <div className="medicine-leaflet"><strong>Ulotka dla pacjenta</strong>{leafletState === 'loading' ? <p>Sprawdzanie ulotki w rejestrze…</p> : leafletUrl ? <button type="button" className="secondary leaflet-open" onClick={() => setShowLeaflet(true)}>Otwórz ulotkę</button> : <p>{leafletState === 'error' ? 'Nie udało się sprawdzić ulotki w rejestrze. Spróbuj ponownie później.' : medicine.registryId ? 'Rejestr nie udostępnia ulotki dla tego leku.' : 'Brak ulotki — lek nie jest powiązany z rejestrem.'}</p>}{leafletState === 'error' && leafletUrl && <p>Nie udało się sprawdzić aktualnego adresu w rejestrze.</p>}</div>
       <div className="medicine-details-actions"><button type="button" className="button-quiet" onClick={onStock}>Stan</button><button type="button" className="primary" onClick={onEdit}>Edytuj lek</button></div>
-    </section>
-  </div>
+  </Dialog>{showLeaflet && <LeafletViewer medicine={medicine} url={leafletUrl} onClose={() => setShowLeaflet(false)} />}</>
 }

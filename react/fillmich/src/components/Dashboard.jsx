@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import { doseKey, formatAmount, hasStock } from '../inventory'
 import PageHeader from './PageHeader'
+import { localDate } from '../date'
 
-const localDate = () => new Date().toLocaleDateString('en-CA')
 
 export default function Dashboard({ medicines, people, plans, history, onNavigate, onAddMedicine }) {
   const [date, setDate] = useState(localDate)
@@ -32,4 +32,4 @@ export default function Dashboard({ medicines, people, plans, history, onNavigat
   </section>
 }
 
-function localDateFor(date) { return date.toLocaleDateString('en-CA') }
+function localDateFor(date) { return localDate(date) }
