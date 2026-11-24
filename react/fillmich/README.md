@@ -85,7 +85,7 @@ W Android Studio wybierz telefon lub emulator i uruchom aplikację przyciskiem *
 
 Po synchronizacji otwórz projekt Androida i w Android Studio wybierz **Build → Generate Signed Bundle / APK**. Wybierz APK lub Android App Bundle, wskaż klucz wydawniczy, a następnie wybierz wariant **release** i zakończ budowanie. Aby zaktualizować aplikację już zainstalowaną na urządzeniu, podpisz nowy pakiet tym samym kluczem co poprzednie wydanie. Numer wersji i kod wersji są pobierane z `src/version.json`.
 
-Polecenie `android:sync` przygotowuje grafikę aplikacji, eksportuje lokalną bazę rejestru, buduje aplikację i synchronizuje projekt Capacitor. Wyszukiwanie w zainstalowanej aplikacji korzysta z lokalnej kopii rejestru i nie wymaga serwera. Kopię można odświeżyć w ustawieniach aplikacji za pomocą przycisku **Sprawdź i aktualizuj**. Pobranie całego rejestru wymaga internetu i może zużyć dużo danych. Odczyt kodów ze zdjęć zależy od możliwości systemowej przeglądarki WebView.
+Polecenie `android:sync` przygotowuje grafikę aplikacji, eksportuje lokalną bazę rejestru, buduje aplikację i synchronizuje projekt Capacitor. Wyszukiwanie w zainstalowanej aplikacji korzysta z lokalnej kopii rejestru i nie wymaga serwera. Kopię można sprawdzić i odświeżyć w ustawieniach aplikacji za pomocą przycisku **Sprawdź i aktualizuj**. Aplikacja porównuje datę i rozmiar eksportu; jeśli dane się zgadzają, pomija pobieranie. Starsza kopia bez zapisanych informacji o źródle oraz rejestr bez danych do porównania wymagają pełnego pobrania. Sprawdzenie i pobranie wymagają internetu; pełny rejestr może zużyć dużo danych. Odczyt kodów ze zdjęć zależy od możliwości systemowej przeglądarki WebView.
 
 ## Dane i rejestr leków
 

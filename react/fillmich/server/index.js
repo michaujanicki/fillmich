@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises'
 import { extname, resolve, sep } from 'node:path'
 import { createServer as createViteServer } from 'vite'
 import { packagesForProduct, productById, refresh, scheduleRefresh, search, status } from './registry.js'
+import { hasPdfHeader } from '../src/pdfSignature.js'
 
 const production = process.argv.includes('--production')
 const vite = production ? null : await createViteServer({ server: { middlewareMode: true }, appType: 'spa' })
@@ -20,7 +21,7 @@ async function sendLeaflet(id, res) {
     const chunks = []; let size = 0
     for await (const chunk of response.body) { size += chunk.length; if (size > maxLeafletBytes) throw new Error('Leaflet too large'); chunks.push(chunk) }
     const data = Buffer.concat(chunks)
-    if (data.subarray(0, 5).toString() !== '%PDF-') throw new Error('Invalid PDF')
+    if (!hasPdfHeader(data)) throw new Error('Invalid PDF')
     res.setHeader('Content-Type', 'application/pdf'); res.setHeader('Cache-Control', 'no-store'); res.end(data)
   } catch { res.writeHead(502); res.end(JSON.stringify({ error: 'Leaflet unavailable' })) }
 }

@@ -3,7 +3,7 @@ import Dialog from './Dialog'
 import eanImage from '../assets/kodlek-ean.svg'
 import matrixImage from '../assets/kodlek-ui.svg'
 
-export default function ScanGuide({ type }) {
+export default function ScanGuide({ type, context = 'scan' }) {
   const [open, setOpen] = useState(false)
   const [zoom, setZoom] = useState(1)
   const ean = type === 'ean'
@@ -18,7 +18,7 @@ export default function ScanGuide({ type }) {
       <button type="button" className="scan-guide-image" aria-label={`Powiększ ilustrację: ${title}`} onClick={() => { setZoom(1); setOpen(true) }}>
         <img src={src} alt={alt} /><span aria-hidden="true">⌕ Powiększ</span>
       </button>
-      <figcaption><strong>{title}</strong><span>{ean ? 'Szukaj podłużnego kodu kreskowego z cyframi.' : 'Szukaj małego, kwadratowego kodu na opakowaniu.'}</span><small>Ilustracja poglądowa. Zeskanuj kod ze swojego opakowania.</small></figcaption>
+      <figcaption><strong>{title}</strong><span>{ean ? 'Szukaj podłużnego kodu kreskowego z cyframi.' : 'Szukaj małego, kwadratowego kodu na opakowaniu.'}</span><small>{context === 'scan' ? 'Ilustracja poglądowa. Zeskanuj kod ze swojego opakowania.' : 'Ilustracja poglądowa. Sprawdź kod na swoim opakowaniu.'}</small></figcaption>
     </figure>
     {open && <Dialog overlayClassName="scan-zoom-overlay" baseClassName="" className="scan-zoom-dialog" label={`Powiększona ilustracja: ${title}`} showClose={false} onClose={close}>
         <div className="scan-zoom-header"><strong>{title}</strong><button data-dialog-close type="button" onClick={close}>Zamknij ✕</button></div>

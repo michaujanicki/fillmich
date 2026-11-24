@@ -1,4 +1,5 @@
 import { Capacitor, CapacitorHttp } from '@capacitor/core'
+import { hasPdfHeader } from './pdfSignature'
 
 const leafletPattern = /^https:\/\/rejestry\.ezdrowie\.gov\.pl\/api\/rpl\/medicinal-products\/\d+\/leaflet$/
 const maxBytes = 20 * 1024 * 1024
@@ -17,6 +18,6 @@ export async function fetchLeaflet(productId, leafletUrl, signal) {
     if (!response.ok) throw new Error('Nie udało się pobrać ulotki.')
     bytes = new Uint8Array(await response.arrayBuffer())
   }
-  if (bytes.length > maxBytes || bytes.length < 5 || String.fromCharCode(...bytes.subarray(0, 5)) !== '%PDF-') throw new Error('Nieprawidłowy plik ulotki.')
+  if (bytes.length > maxBytes || !hasPdfHeader(bytes)) throw new Error('Nieprawidłowy plik ulotki.')
   return bytes
 }

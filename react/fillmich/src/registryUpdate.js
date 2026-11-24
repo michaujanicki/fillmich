@@ -1,7 +1,7 @@
 import { CapacitorHttp } from '@capacitor/core'
 import { SaxesParser } from 'saxes'
+import { REGISTRY_SOURCE, sameSourceVersion, sourceVersion } from './registryVersion.js'
 
-const SOURCE = 'https://rejestry.ezdrowie.gov.pl/api/rpl/medicinal-products/public-pl-report/6.0.0/overall.xml'
 const DB = 'fillmich-registry'
 
 function database() {
@@ -60,10 +60,18 @@ export function parseRegistry(xml) {
   return { products, packages, registryDate, updatedAt: new Date().toISOString() }
 }
 
-export async function downloadSnapshot() {
-  const response = await CapacitorHttp.get({ url: SOURCE, responseType: 'text', connectTimeout: 30000, readTimeout: 300000 })
+export async function downloadSnapshot(current, { http = CapacitorHttp, save = saveSnapshot } = {}) {
+  let available = null
+  try {
+    const head = await http.request({ url: REGISTRY_SOURCE, method: 'HEAD', connectTimeout: 30000, readTimeout: 30000 })
+    if (head.status === 200) available = sourceVersion(head.headers)
+  } catch { /* Fall back to a full download when a version check is unavailable. */ }
+  if (current?.products?.length && sameSourceVersion(current.sourceVersion, available)) return { result: 'unchanged', data: null }
+  const response = await http.get({ url: REGISTRY_SOURCE, responseType: 'text', connectTimeout: 30000, readTimeout: 300000 })
   if (response.status !== 200 || typeof response.data !== 'string') throw new Error('Nie udało się pobrać rejestru')
   const data = parseRegistry(response.data)
-  await saveSnapshot(data)
-  return data
+  const downloaded = sourceVersion(response.headers)
+  if (downloaded && downloaded.date === data.registryDate) data.sourceVersion = downloaded
+  await save(data)
+  return { result: 'updated', data }
 }

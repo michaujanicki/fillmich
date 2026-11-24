@@ -33,10 +33,12 @@ export async function updateRegistry() {
   if (!Capacitor.isNativePlatform()) {
     const response = await fetch('/api/registry/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
     if (!response.ok) throw new Error('Nie udało się rozpocząć aktualizacji')
-    return
+    return null
   }
-  const data = await downloadSnapshot()
-  snapshotPromise = Promise.resolve(indexSnapshot(data))
+  const current = await snapshot()
+  const { result, data } = await downloadSnapshot(current)
+  if (data) snapshotPromise = Promise.resolve(indexSnapshot(data))
+  return result
 }
 export async function searchRegistry(query) {
   if (!Capacitor.isNativePlatform()) return getJson(`/api/registry/search?q=${encodeURIComponent(query)}`)

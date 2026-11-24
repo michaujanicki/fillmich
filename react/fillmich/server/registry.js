@@ -1,8 +1,8 @@
 import { DatabaseSync } from 'node:sqlite'
 import { mkdirSync } from 'node:fs'
 import { SaxesParser } from 'saxes'
+import { REGISTRY_SOURCE, sameSourceVersion, sourceVersion } from '../src/registryVersion.js'
 
-const SOURCE = 'https://rejestry.ezdrowie.gov.pl/api/rpl/medicinal-products/public-pl-report/6.0.0/overall.xml'
 const DAY = 24 * 60 * 60 * 1000
 mkdirSync('data', { recursive: true })
 const db = new DatabaseSync('data/registry.sqlite')
@@ -15,9 +15,10 @@ CREATE TABLE IF NOT EXISTS staging_products (id TEXT PRIMARY KEY, name TEXT NOT 
 CREATE TABLE IF NOT EXISTS staging_packages (product_id TEXT NOT NULL, code TEXT NOT NULL, description TEXT);`)
 let running = false
 let lastError = ''
+let lastResult = ''
 const metadata = db.prepare('SELECT value FROM metadata WHERE key = ?')
 const getUpdatedAt = () => metadata.get('updated_at')?.value || null
-export function status() { return { updatedAt: getUpdatedAt(), registryDate: metadata.get('registry_date')?.value || null, importing: running, error: lastError, count: db.prepare('SELECT count(*) AS count FROM products').get().count } }
+export function status() { return { updatedAt: getUpdatedAt(), checkedAt: metadata.get('checked_at')?.value || null, registryDate: metadata.get('registry_date')?.value || null, importing: running, error: lastError, result: lastResult, count: db.prepare('SELECT count(*) AS count FROM products').get().count } }
 export function search(query, code) {
   if (code) {
     if (!/^\d{8,14}$/.test(code)) return []
@@ -37,9 +38,21 @@ export function productById(id) {
 }
 export async function refresh() {
   if (running) return
-  running = true; lastError = ''
+  running = true; lastError = ''; lastResult = ''
   try {
-    const response = await fetch(SOURCE, { signal: AbortSignal.timeout(300000) })
+    const storedVersion = { date: metadata.get('source_date')?.value, size: Number(metadata.get('source_size')?.value) }
+    let available = null
+    try {
+      const head = await fetch(REGISTRY_SOURCE, { method: 'HEAD', signal: AbortSignal.timeout(30000) })
+      if (head.ok) available = sourceVersion(head.headers)
+    } catch { /* Fall back to a full download if the version cannot be checked. */ }
+    if (metadata.get('schema_version')?.value === '2' && db.prepare('SELECT count(*) AS count FROM products').get().count && sameSourceVersion(storedVersion, available)) {
+      db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('checked_at', new Date().toISOString())
+      lastResult = 'unchanged'
+      console.log('RPL: baza jest aktualna')
+      return
+    }
+    const response = await fetch(REGISTRY_SOURCE, { signal: AbortSignal.timeout(300000) })
     if (!response.ok || !response.body) throw new Error(`Rejestr odpowiedzial kodem ${response.status}`)
     db.exec('DELETE FROM staging_products; DELETE FROM staging_packages;')
     const addProduct = db.prepare('INSERT OR REPLACE INTO staging_products VALUES (?, ?, ?, ?, ?)')
@@ -66,9 +79,17 @@ export async function refresh() {
     if (!productCount) throw new Error('Rejestr nie zawiera rozpoznanych produktow')
     db.exec('BEGIN; DELETE FROM packages; DELETE FROM products; INSERT INTO products SELECT * FROM staging_products; INSERT INTO packages SELECT * FROM staging_packages;')
     db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('updated_at', new Date().toISOString())
+    db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('checked_at', new Date().toISOString())
     db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('registry_date', date || '')
     db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('schema_version', '2')
+    const downloaded = sourceVersion(response.headers)
+    db.prepare('DELETE FROM metadata WHERE key IN (?, ?)').run('source_date', 'source_size')
+    if (downloaded && downloaded.date === date) {
+      db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('source_date', downloaded.date)
+      db.prepare('INSERT OR REPLACE INTO metadata VALUES (?, ?)').run('source_size', String(downloaded.size))
+    }
     db.exec('COMMIT')
+    lastResult = 'updated'
     console.log(`RPL: zaimportowano ${productCount} produktow, stan ${date}`)
   } catch (error) {
     try { db.exec('ROLLBACK') } catch { /* no active transaction */ }
@@ -77,8 +98,9 @@ export async function refresh() {
   } finally { running = false }
 }
 export function scheduleRefresh() {
-  const updatedAt = getUpdatedAt()
+  const lastCheck = () => metadata.get('checked_at')?.value || getUpdatedAt()
+  const updatedAt = lastCheck()
   if (!updatedAt || metadata.get('schema_version')?.value !== '2' || Date.now() - Date.parse(updatedAt) >= DAY) void refresh()
-  const timer = setInterval(() => { const updated = getUpdatedAt(); if (!updated || Date.now() - Date.parse(updated) >= DAY) void refresh() }, 60 * 60 * 1000)
+  const timer = setInterval(() => { const updated = lastCheck(); if (!updated || Date.now() - Date.parse(updated) >= DAY) void refresh() }, 60 * 60 * 1000)
   timer.unref()
 }

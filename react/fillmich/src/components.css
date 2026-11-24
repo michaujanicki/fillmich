@@ -12,3 +12,6 @@
 .message-overlay{z-index:1100}.message-dialog{width:min(480px,100%)}.message-dialog p{font-size:var(--reading-text);overflow-wrap:anywhere}.message-dialog .wizard-actions{flex-wrap:wrap}
 .registry-progress{height:8px;max-width:360px;margin-top:12px;overflow:hidden;border-radius:999px;background:var(--surface-soft)}.registry-progress span{display:block;width:35%;height:100%;border-radius:inherit;background:var(--accent-strong);animation:registry-progress 1.4s ease-in-out infinite alternate}@keyframes registry-progress{from{transform:translateX(0)}to{transform:translateX(185%)}}@media(prefers-reduced-motion:reduce){.registry-progress span{animation:none;width:100%}}
 .tutorial-overlay.overlay{display:block;padding:0}
+.tutorial-content .scan-guide, .code-information .scan-guide { margin-top: 20px; text-align: left; }
+.code-information > div { width: 100%; }
+.code-information .scan-guide { max-width: 620px; }

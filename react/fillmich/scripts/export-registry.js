@@ -11,6 +11,9 @@ if (!products.length) throw new Error('Baza rejestru jest pusta. Zaczekaj na zak
 const packages = db.prepare('SELECT product_id,code,description FROM packages').all()
 const updatedAt = db.prepare("SELECT value FROM metadata WHERE key = 'updated_at'").get()?.value || null
 const registryDate = db.prepare("SELECT value FROM metadata WHERE key = 'registry_date'").get()?.value || null
-writeFileSync('public/registry-snapshot.json', JSON.stringify({ updatedAt, registryDate, products, packages }))
+const sourceDate = db.prepare("SELECT value FROM metadata WHERE key = 'source_date'").get()?.value
+const sourceSize = Number(db.prepare("SELECT value FROM metadata WHERE key = 'source_size'").get()?.value)
+const sourceVersion = sourceDate && sourceSize ? { date: sourceDate, size: sourceSize } : null
+writeFileSync('public/registry-snapshot.json', JSON.stringify({ updatedAt, registryDate, sourceVersion, products, packages }))
 db.close()
 console.log(`Przygotowano kopię rejestru: ${products.length} produktów, ${packages.length} opakowań.`)

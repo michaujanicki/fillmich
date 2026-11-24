@@ -3,13 +3,15 @@ import PersonForm from './PersonForm'
 import StepProgress from './StepProgress'
 import Dialog from './Dialog'
 import { FormActions } from './FormFields'
+import ScanGuide from './ScanGuide'
 
 const pages = [
   { icon: 'app', title: 'Witaj w Fillmich', text: 'Twoja domowa apteczka w jednym miejscu. Dodawaj leki, przypisuj je bliskim i sprawdzaj terminy ważności.' },
   { icon: '◐', title: 'Wybierz motyw', text: 'Wybierz jasny lub ciemny wygląd aplikacji. Możesz go później zmienić w ustawieniach.' },
   { icon: '♙', title: 'Dodaj kolejną osobę', text: 'Możesz dodać profil bliskiej osoby i przypisywać do niego leki.' },
   { icon: '▤', title: 'Dodaj lek do apteczki', text: 'Wyszukaj lek w rejestrze, zeskanuj kod kreskowy albo wpisz jego dane samodzielnie. Wybierz odpowiedni produkt i opakowanie.' },
-  { icon: '▣', title: 'Odczytaj kod z opakowania', text: 'Kod EAN pomaga znaleźć opakowanie w rejestrze. Kod UI może zawierać także numer partii i datę ważności. Zawsze porównaj odczytane dane z opakowaniem.' },
+  { icon: '▣', title: 'Znajdź kod EAN', text: 'Kod kreskowy EAN pomaga znaleźć w rejestrze rodzaj opakowania. Porównaj znaleziony lek z tym, który masz w domu.', guide: 'ean' },
+  { icon: '▣', title: 'Sprawdź kod UI', text: 'Kwadratowy kod UI może zawierać numer partii i datę ważności. Zawsze porównaj odczytane dane z opakowaniem.', guide: 'ui' },
   { icon: '◷', title: 'Sprawdzaj terminy ważności', text: 'Wpisz datę z opakowania. Fillmich oznaczy leki po terminie oraz te, których termin upływa w ciągu 90 dni.' },
   { icon: '✚', title: 'Kontroluj zapasy', text: 'Zapisz liczbę pozostałych tabletek i aktualizuj ją w apteczce. Możesz przypisać lek do osoby albo pozostawić go jako wspólny.' },
   { icon: '◷', title: 'Zaplanuj przyjmowanie', text: 'W zakładce Dawkowanie zapisz codzienne pory i dawki ustalone przez lekarza lub zgodne z ulotką. Oznaczaj przyjęte dawki i sprawdzaj kalendarz.' },
@@ -35,6 +37,7 @@ export default function Tutorial({ onClose, people, onAddPerson, onUndoPerson, t
       <div className="eyebrow">PIERWSZE KROKI</div>
       <StepProgress current={step + 1} total={pages.length} />
       <h2 id="tutorial-title">{step === 2 && requiredPerson ? 'Dodaj osobę lub nazwę' : page.title}</h2><p>{step === 2 && requiredPerson ? 'Aby korzystać z apteczki, wpisz imię osoby albo nazwę, na przykład Dom.' : page.text}</p>
+      {page.guide && <ScanGuide type={page.guide} context="info" />}
       {step === 1 && <fieldset className="tutorial-theme"><legend>Motyw aplikacji</legend>{[['light', 'Jasny'], ['dark', 'Ciemny']].map(([value, label]) => <label key={value} className={theme === value ? 'selected' : ''}><input type="radio" name="tutorial-theme" value={value} checked={theme === value} onChange={() => setTheme(value)} />{label}</label>)}</fieldset>}
       {step === 2 && <PersonForm compact people={people} onAdd={person => { onAddPerson(person); if (requiredPerson) setCreatedPerson(person.name); setStep(3) }} />}
       {step === 2 && needsPerson && <p className="tutorial-person-hint" role="status">Wpisz nazwę powyżej i naciśnij „Dodaj osobę”, aby przejść dalej.</p>}
